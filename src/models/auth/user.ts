@@ -1,25 +1,28 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, Document, CallbackError } from "mongoose";
+import bcrypt from "bcrypt";
 
 // Kullanıcı rolleri
 export enum UserRole {
   ADMIN = "admin", // Baro Yöneticisi
-  MEMBER = "member", // Baro Üyesi
+  BARO_OFFICER = "baro_officer", // Baro Üyesi
   LAWYER = "lawyer", // Avukat
 }
 
-// Kullanıcı şeması arayüzü
+// Kullanıcı Şeması Arayüzü
 export interface IUser extends Document {
   tcNumber: string; // TC Kimlik Numarası
   name: string; // Adı
   surname: string; // Soyadı
   email?: string; // E-posta (opsiyonel)
-  phone?: string; // Telefon Numarası (opsiyonel)
-  password: string; // Şifre
+  phone?: string; // Telefon (opsiyonel)
+  password: string; // Şifre (hashlenmiş)
   role: UserRole; // Kullanıcı Rolü
   referenceNumber?: string; // İlk giriş için referans numarası
+  refreshToken?: string; // Sürekli oturum için Refresh Token
   isActive: boolean; // Hesap aktif mi?
   createdAt: Date; // Oluşturulma tarihi
   updatedAt: Date; // Güncellenme tarihi
+  comparePassword(candidatePassword: string): Promise<boolean>; // Şifre karşılaştırma metodu
 }
 
 // Kullanıcı Şeması
@@ -27,28 +30,75 @@ const userSchema = new Schema<IUser>(
   {
     tcNumber: {
       type: String,
-      required: true,
+      required: [true, "TC Kimlik Numarası gereklidir."],
       unique: true,
-      minlength: 11,
-      maxlength: 11,
+      minlength: [11, "TC Kimlik Numarası 11 haneli olmalıdır."],
+      maxlength: [11, "TC Kimlik Numarası 11 haneli olmalıdır."],
+      validate: {
+        validator: (v: string) => /^[0-9]{11}$/.test(v),
+        message: "Geçerli bir TC Kimlik Numarası giriniz.",
+      },
     },
-    name: { type: String, required: true },
-    surname: { type: String, required: true },
-    email: { type: String, lowercase: true, trim: true },
-    phone: { type: String },
-    password: { type: String, required: true },
+    name: { type: String, required: [true, "Ad gereklidir."] },
+    surname: { type: String, required: [true, "Soyad gereklidir."] },
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      validate: {
+        validator: (v: string) =>
+          /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(v),
+        message: "Geçerli bir e-posta adresi giriniz.",
+      },
+    },
+    phone: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (v: string) => /^[0-9]{10,15}$/.test(v),
+        message: "Geçerli bir telefon numarası giriniz.",
+      },
+    },
+    password: { type: String, required: [true, "Şifre gereklidir."] },
     role: {
       type: String,
-      required: true,
-      enum: Object.values(UserRole),
+      required: [true, "Kullanıcı rolü gereklidir."],
+      enum: {
+        values: Object.values(UserRole),
+        message: "Geçersiz kullanıcı rolü.",
+      },
     },
     referenceNumber: { type: String, unique: true, sparse: true },
+    refreshToken: { type: String },
     isActive: { type: Boolean, default: false },
   },
   {
-    timestamps: true, // createdAt ve updatedAt otomatik olarak eklenecek
+    timestamps: true, // createdAt ve updatedAt otomatik olarak eklenir
   }
 );
+
+// Şifre Hashleme (Pre-Save Middleware)
+userSchema.pre("save", async function (next: (err?: CallbackError) => void) {
+  try {
+    if (!this.isModified("password")) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error as CallbackError); // Hata tipini açıkça belirtin
+  }
+});
+
+// Şifre Karşılaştırma
+userSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
+  try {
+    return bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    throw new Error("Şifre doğrulama sırasında bir hata oluştu.");
+  }
+};
 
 // Model Oluşturma
 const User = model<IUser>("User", userSchema);
