@@ -21,6 +21,7 @@ export interface IApplication extends Document {
   status: ApplicationStatus; // Başvuru durumu
   assignedLawyer?: Types.ObjectId; // Atanmış avukatın ID'si (User Modeline referans)
   city?: Types.ObjectId | ICity; // Opsiyonel: Şehir
+  complaintDate: Date; // Şikayet Tarihi
 }
 
 /**
@@ -59,6 +60,7 @@ const applicationSchema = new Schema<IApplication>(
     },
     assignedLawyer: { type: Types.ObjectId, ref: "User" },
     city: { type: Types.ObjectId, ref: "City" },
+    complaintDate: { type: Date, required: true }, // Şikayet tarihi zorunlu
   },
   { timestamps: true }
 );

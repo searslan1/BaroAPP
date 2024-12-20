@@ -9,7 +9,7 @@ const router = Router();
 // Modüllerin rotaları
 router.use("/auth", authRoutes);
 //router.use("/cases", caseRoutes);
-//router.use("/applications", applicationRoutes);
+router.use("/applications", applicationRoutes);
 //router.use("/violations", violationRoutes);
 
 export default router;
