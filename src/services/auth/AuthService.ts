@@ -2,6 +2,7 @@ import User, { IUser, UserRole } from "../../models/auth/user";
 import { generateAccessToken, generateRefreshToken } from "../../utils/token";
 import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
+import { Error } from "mongoose";
 
 /**
  * Baro üyesi veya avukatı kaydetmek için referans numarası oluşturma
@@ -34,22 +35,35 @@ export const loginWithReference = async (
   tcNumber: string,
   referenceNumber: string
 ): Promise<{ accessToken: string; refreshToken: string }> => {
-  const user = await User.findOne({ tcNumber, referenceNumber });
+  try {
+    const user = await User.findOne({ tcNumber, referenceNumber });
 
-  if (!user || user.isActive) {
-    throw new Error("Geçersiz referans numarası veya kullanıcı zaten aktif.");
+    if (!user) {
+      throw new Error("Kullanıcı bulunamadı. TC Kimlik Numarası veya Referans Numarası yanlış.");
+    }
+
+    if (user.isActive) {
+      throw new Error(
+        "Bu kullanıcı zaten aktif durumda. Lütfen giriş yapmak için şifrenizi kullanın."
+      );
+    }
+
+    const accessToken = generateAccessToken({ id: user.id, role: user.role });
+    const refreshToken = generateRefreshToken({ id: user.id });
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return { accessToken, refreshToken };
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new Error(error.message || "Beklenmeyen bir hata oluştu.");
+    } else {
+      throw new Error("Beklenmeyen bir hata oluştu.");
+    }
   }
-
-  // Token oluşturma
-  const accessToken = generateAccessToken({ id: user.id, role: user.role });
-  const refreshToken = generateRefreshToken({ id: user.id });
-
-  // Refresh Token kaydetme
-  user.refreshToken = refreshToken;
-  await user.save();
-
-  return { accessToken, refreshToken };
 };
+
 
 /**
  * Tam kayıt işlemi
@@ -66,15 +80,12 @@ export const completeRegistration = async (
     throw new Error("Kullanıcı bulunamadı veya zaten aktif.");
   }
 
-  // Şifre hashleme
-  const hashedPassword = await bcrypt.hash(password, 10);
-
   user.email = email;
   user.phone = phone;
-  user.password = hashedPassword;
+  user.password = password; // Şifre düz metin olarak atanır
   user.isActive = true;
   user.referenceNumber = undefined; // Referans numarası artık gereksiz
-  await user.save();
+  await user.save(); // `pre("save")` middleware'i şifreyi hashler
 };
 
 /**
@@ -104,3 +115,42 @@ export const logout = async (userId: string): Promise<void> => {
     user.refreshToken = undefined; // Refresh Token'ı kaldır
     await user.save();
   };
+  /**
+ * Kullanıcıyı doğrula ve bilgilerini döndür
+ */
+export const verifyUser = async (userId: string) => {
+  const user = await User.findById(userId).select("name surname role email");
+
+  if (!user) {
+    throw new Error("Kullanıcı bulunamadı.");
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    surname: user.surname,
+    role: user.role,
+    email: user.email,
+  };
+};
+//ilk uygulama çalıştırıldığında yönetici oluşturmak için yazılmış geçici bir fonksiyon
+const seedBaroAdmin = async () => {
+  const existingAdmin = await User.findOne({ role: UserRole.ADMIN });
+  if (!existingAdmin) {
+    const admin = new User({
+      tcNumber: "11111111111",
+      name: "Baro",
+      surname: "Yönetici",
+      email: "admin@baro.com",
+      password: "admin123",
+      role: UserRole.ADMIN,
+      isActive: true,
+    });
+    await admin.save();
+    console.log("Baro yöneticisi başarıyla oluşturuldu.");
+  } else {
+    console.log("Baro yöneticisi zaten mevcut.");
+  }
+};
+
+seedBaroAdmin();

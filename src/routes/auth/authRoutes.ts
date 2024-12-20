@@ -6,6 +6,7 @@ import {
   completeUserRegistration,
   refreshToken,
   logoutUser,
+  verifyUserHandler
 } from "../../controllers/auth/AuthController";
 import { authenticate, authorize } from "../../middlewares/auth.middleware";
 import { UserRole } from "../../models/auth/user";
@@ -42,5 +43,11 @@ router.post("/refresh-token", asyncHandler(refreshToken));
  * Kullanıcı çıkışı (Logout)
  */
 router.post("/logout", authenticate, asyncHandler(logoutUser));
+
+/**
+ * Kullanıcı doğrulama (Profil bilgileri döndürme)
+ * Yetki: Giriş yapılmış olmalı
+ */
+router.get("/verify-user", authenticate, asyncHandler(verifyUserHandler));
 
 export default router;

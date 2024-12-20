@@ -59,8 +59,16 @@ const userSchema = new Schema<IUser>(
         message: "Geçerli bir telefon numarası giriniz.",
       },
     },
-    password: { type: String, required: [true, "Şifre gereklidir."] },
-    role: {
+    password: {
+      type: String,
+      validate: {
+        validator: function (v: string) {
+          // Şifre yalnızca kullanıcı aktif olduğunda zorunludur
+          return this.isActive ? !!v : true;
+        },
+        message: "Şifre gereklidir.",
+      },
+    },    role: {
       type: String,
       required: [true, "Kullanıcı rolü gereklidir."],
       enum: {

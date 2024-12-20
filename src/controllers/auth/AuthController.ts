@@ -5,6 +5,8 @@ import {
   completeRegistration,
   refreshAccessToken,
   logout,
+  verifyUser as verifyUserService
+
 } from "../../services/auth/AuthService";
 
 /**
@@ -34,7 +36,7 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
  */
 export const loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { tcNumber, referenceNumber } = req.body;
-
+console.log(referenceNumber);
   try {
     if (!tcNumber || !referenceNumber) {
       res.status(400).json({ error: "TC ve Referans Numarası gereklidir." });
@@ -110,6 +112,25 @@ export const logoutUser = async (req: Request, res: Response, next: NextFunction
 
     await logout(userId);
     res.status(200).json({ message: "Başarıyla çıkış yapıldı." });
+  } catch (error) {
+    next(error);
+  }
+};
+/**
+ * Kullanıcı doğrulama kontrolcüsü
+ */
+export const verifyUserHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Yetkisiz erişim. Kullanıcı doğrulanamadı." });
+      return;
+    }
+
+    const userInfo = await verifyUserService(req.user.id);
+    res.status(200).json({
+      message: "Kullanıcı doğrulandı.",
+      data: userInfo,
+    });
   } catch (error) {
     next(error);
   }
