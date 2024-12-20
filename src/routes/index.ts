@@ -1,7 +1,7 @@
 import { Router } from "express";
 import authRoutes from "./auth/authRoutes";
-import caseRoutes from "./dava/caseRoutes";
-import applicationRoutes from "./basvuru/applicationRoutes";
+import caseRoutes from "./case/caseRoutes";
+import applicationRoutes from "./application/applicationRoutes";
 import violationRoutes from "./hak-ihlalleri/violationRoutes";
 
 const router = Router();
