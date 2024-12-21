@@ -17,7 +17,6 @@ export interface IUser extends Document {
   phone?: string; // Telefon (opsiyonel)
   password: string; // Şifre (hashlenmiş)
   role: UserRole; // Kullanıcı Rolü
-  referenceNumber?: string; // İlk giriş için referans numarası
   refreshToken?: string; // Sürekli oturum için Refresh Token
   isActive: boolean; // Hesap aktif mi?
   createdAt: Date; // Oluşturulma tarihi
@@ -76,7 +75,6 @@ const userSchema = new Schema<IUser>(
         message: "Geçersiz kullanıcı rolü.",
       },
     },
-    referenceNumber: { type: String, unique: true, sparse: true },
     refreshToken: { type: String },
     isActive: { type: Boolean, default: false },
   },

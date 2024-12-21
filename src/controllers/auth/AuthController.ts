@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import {
-  createUserWithReference,
-  loginWithReference,
+  createUserWithPassword,
+  loginWithPassword,
   completeRegistration,
   refreshAccessToken,
   logout,
@@ -21,10 +21,11 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
       return;
     }
 
-    const referenceNumber = await createUserWithReference(role, tcNumber, name, surname);
+    const temporaryPassword = await createUserWithPassword(role, tcNumber, name, surname);
+
     res.status(201).json({
       message: "Kullanıcı başarıyla oluşturuldu.",
-      data: { referenceNumber },
+      data: { temporaryPassword },
     });
   } catch (error) {
     next(error);
@@ -35,15 +36,16 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
  * Giriş yapma
  */
 export const loginUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { tcNumber, referenceNumber } = req.body;
-console.log(referenceNumber);
+  const { tcNumber, password } = req.body;
+
   try {
-    if (!tcNumber || !referenceNumber) {
-      res.status(400).json({ error: "TC ve Referans Numarası gereklidir." });
+    if (!tcNumber || !password) {
+      res.status(400).json({ error: "TC Kimlik Numarası ve Şifre gereklidir." });
       return;
     }
 
-    const tokens = await loginWithReference(tcNumber, referenceNumber);
+    const tokens = await loginWithPassword(tcNumber, password);
+
     res.status(200).json({
       message: "Giriş başarılı.",
       data: tokens,

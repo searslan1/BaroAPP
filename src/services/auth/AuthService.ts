@@ -4,64 +4,97 @@ import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import { Error } from "mongoose";
 
+
 /**
- * Baro üyesi veya avukatı kaydetmek için referans numarası oluşturma
+ * Rastgele şifre üretir.
  */
-export const createUserWithReference = async (
+function generateRandomPassword(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+  let password = "";
+  for (let i = 0; i < 10; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+/**
+ * Baro üyesi veya avukatı kaydetmek için password oluşturma
+ */
+export const createUserWithPassword = async (
   role: UserRole,
   tcNumber: string,
   name: string,
   surname: string
 ): Promise<string> => {
-  const referenceNumber = uuidv4(); // Benzersiz referans numarası
+  // Rastgele şifre oluştur
+  const temporaryPassword = generateRandomPassword();
+
+  // Şifreyi hashle
+  const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+  // Kullanıcı oluştur
   const newUser = new User({
     tcNumber,
     name,
     surname,
-    password: "temp_password", // Geçici şifre
+    password: hashedPassword,
     role,
-    referenceNumber,
     isActive: false, // Tam kayıt yapılana kadar aktif değil
   });
 
   await newUser.save();
-  return referenceNumber; // Baro yöneticisine referans numarası döndürülür
+
+  // Düz metin şifreyi döndür
+  return temporaryPassword;
 };
 
 /**
  * TC Kimlik Numarası ve Referans Numarası ile giriş yapma
  */
-export const loginWithReference = async (
+export const loginWithPassword = async (
   tcNumber: string,
-  referenceNumber: string
+  password: string
 ): Promise<{ accessToken: string; refreshToken: string }> => {
   try {
-    const user = await User.findOne({ tcNumber, referenceNumber });
+    // Kullanıcıyı TC Kimlik Numarası ile bul
+    const user = await User.findOne({ tcNumber });
 
     if (!user) {
-      throw new Error("Kullanıcı bulunamadı. TC Kimlik Numarası veya Referans Numarası yanlış.");
+      throw { status: 404, message: "Kullanıcı bulunamadı. TC Kimlik Numarası yanlış." };
     }
 
-    if (user.isActive) {
-      throw new Error(
-        "Bu kullanıcı zaten aktif durumda. Lütfen giriş yapmak için şifrenizi kullanın."
-      );
+    // Şifre doğrulama
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      throw { status: 401, message: "Hatalı şifre." };
     }
 
+    // Kullanıcı aktif değilse tam kayıt işlemine yönlendirme
+    if (!user.isActive) {
+      throw {
+        status: 403,
+        message: "Kullanıcı aktif değil. Lütfen tam kayıt işlemi tamamlayarak yeni şifre oluşturun.",
+      };
+    }
+
+    // Token oluşturma
     const accessToken = generateAccessToken({ id: user.id, role: user.role });
     const refreshToken = generateRefreshToken({ id: user.id });
 
+    // Refresh Token'ı veritabanına kaydet
     user.refreshToken = refreshToken;
     await user.save();
 
     return { accessToken, refreshToken };
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(error.message || "Beklenmeyen bir hata oluştu.");
-    } else {
-      throw new Error("Beklenmeyen bir hata oluştu.");
+    if (error instanceof Error && "status" in error && "message" in error) {
+      throw error; // Önceden belirlenmiş hata fırlat
     }
-  }
+
+    // Fallback durumunda türü açıkça belirtin
+    throw { status: 500, message: (error as Error).message || "Beklenmeyen bir hata oluştu." };
+}
+
 };
 
 
@@ -84,7 +117,6 @@ export const completeRegistration = async (
   user.phone = phone;
   user.password = password; // Şifre düz metin olarak atanır
   user.isActive = true;
-  user.referenceNumber = undefined; // Referans numarası artık gereksiz
   await user.save(); // `pre("save")` middleware'i şifreyi hashler
 };
 
@@ -134,7 +166,7 @@ export const verifyUser = async (userId: string) => {
   };
 };
 //ilk uygulama çalıştırıldığında yönetici oluşturmak için yazılmış geçici bir fonksiyon
-const seedBaroAdmin = async () => {
+export const seedBaroAdmin = async () => {
   const existingAdmin = await User.findOne({ role: UserRole.ADMIN });
   if (!existingAdmin) {
     const admin = new User({

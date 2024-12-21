@@ -6,6 +6,7 @@ import routes from "./routes"; // Tüm rotaların toplandığı index.ts
 import cors from "cors";
 import helmet from "helmet";
 import { errorHandler } from "./middlewares/errorHandler";
+import { seedBaroAdmin } from "./services/auth/AuthService";
 
 const app = express();
 
@@ -33,9 +34,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(err.status || 500).json({ error: err.message || "Sunucu Hatası" });
 });
 
-// Sunucu Başlatma
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+seedBaroAdmin().then(() => {
+  console.log("Admin kontrolü tamamlandı.");
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
 });
 
 export default app;
