@@ -63,12 +63,12 @@ router.patch(
  * Davaya belge ekleme
  * Erişim: Baro Yöneticisi ve Atanmış Avukat
  */
-router.post(
-  "/add-document",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.LAWYER]),
-  asyncHandler(addDocumentToCaseHandler)
-);
+// router.post(
+//   "/add-document",
+//   authenticate,
+//   authorize([UserRole.ADMIN, UserRole.LAWYER]),
+//   asyncHandler(addDocumentToCaseHandler)
+// );
 
 /**
  * Davaya ait belgeleri listeleme
