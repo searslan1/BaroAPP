@@ -83,13 +83,14 @@ export const completeUserRegistration = async (
  */
 export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const { refreshToken } = req.body;
+  console.log('refreshhhhhhhhh');
 
   try {
     if (!refreshToken) {
       res.status(400).json({ error: "Refresh Token gereklidir." });
       return;
     }
-
+    
     const accessToken = await refreshAccessToken(refreshToken);
     res.status(200).json({
       message: "Access Token yenilendi.",

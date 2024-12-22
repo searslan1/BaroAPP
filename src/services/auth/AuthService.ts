@@ -70,15 +70,9 @@ export const loginWithPassword = async (
     }
 
     // Kullanıcı aktif değilse tam kayıt işlemine yönlendirme
-    if (!user.isActive) {
-      throw {
-        status: 403,
-        message: "Kullanıcı aktif değil. Lütfen tam kayıt işlemi tamamlayarak yeni şifre oluşturun.",
-      };
-    }
 
     // Token oluşturma
-    const accessToken = generateAccessToken({ id: user.id, role: user.role });
+    const accessToken = generateAccessToken({ id: user.id, role: user.role, isActive: user.isActive });
     const refreshToken = generateRefreshToken({ id: user.id });
 
     // Refresh Token'ı veritabanına kaydet
@@ -132,7 +126,7 @@ export const refreshAccessToken = async (
     throw new Error("Geçersiz Refresh Token.");
   }
 
-  return generateAccessToken({ id: user.id, role: user.role });
+  return generateAccessToken({ id: user.id, role: user.role, isActive: user.isActive });
 };
 /**
  * Kullanıcı çıkışı (Logout)

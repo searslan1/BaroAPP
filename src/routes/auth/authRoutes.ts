@@ -37,7 +37,7 @@ router.post("/complete-registration", asyncHandler(completeUserRegistration));
 /**
  * Refresh Token ile Access Token yenileme
  */
-router.post("/refresh-token", asyncHandler(refreshToken));
+router.post("/refresh", asyncHandler(refreshToken));
 
 /**
  * Kullanıcı çıkışı (Logout)
