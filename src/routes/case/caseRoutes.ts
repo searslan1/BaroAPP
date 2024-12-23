@@ -21,8 +21,7 @@ const router = Router();
  */
 router.post(
   "/create",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.LAWYER]),
+
   asyncHandler(createCaseHandler)
 );
 

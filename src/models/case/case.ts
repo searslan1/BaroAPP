@@ -1,88 +1,86 @@
 import { Schema, model, Document, Types } from "mongoose";
 
-/**
- * Dava Durumları
- */
-export enum CaseStatus {
-  OPEN = "open",
-  IN_PROGRESS = "in_progress",
-  CLOSED = "closed",
-  WON = "won",
-  LOST = "lost",
-}
-
-/**
- * Dava Belgeleri
- */
-export interface ICaseDocument {
-  name: string;
-  type: string; // Ör. dilekçe, tutanak
-  pdfUrl: string; // AWS S3 gibi bir sistemde saklanan belge URL'si
-  uploadedAt: Date;
-}
-
-/**
- * Dava Modeli Arayüzü
- */
 export interface ICase extends Document {
   caseNumber: string; // Dava numarası
-  title: string; // Dava başlığı
+  title: string; // Dava adı
   summary: string; // Dava özeti
-  plaintiff: { name: string; email: string; phone: string }; // Başvuran bilgileri
-  defendant?: string; // Karşı taraf bilgileri
-  category: Types.ObjectId; // Kategori referansı
-  status: CaseStatus; // Dava durumu
-  assignedLawyer: Types.ObjectId; // Atanan avukat referansı
-  openingDate: Date; // Açılış tarihi
-  hearings: Types.ObjectId[]; // Duruşma referansları
-  documents: ICaseDocument[]; // Dava belgeleri
-  statistics: {
-    durationInDays?: number; // Dava süresi (gün)
-    categoryAverage?: number; // Kategori bazlı çözüm süresi (gün)
-  };
-  createdAt: Date;
-  updatedAt: Date;
+  applicant: { name: string; email: string; phone: string }; // Başvuran bilgisi
+  opponent: { name: string; lawyer?: string }; // Karşı taraf bilgisi (opsiyonel avukat)
+  lawyer: Types.ObjectId; // İlgili avukatın User modelindeki ID'si
+  status: string; // Durum (aktif, beklemede, tamamlandı)
+  startDate: Date; // Başlangıç tarihi
+  endDate?: Date; // Kapanış tarihi (opsiyonel)
+  category: string; // Dava kategorisi (ör. ceza, medeni)
+  hearings: Array<{ date: Date; time: string; description: string }>; // Duruşmalar
+  documents: Array<{ name: string; type: string; date: Date }>; // Belgeler
+  rightsViolation?: { category: string; description: string }; // Hak ihlaliyle ilişki (opsiyonel)
+  messages: Array<{ sender: string; message: string; date: Date }>; // Mesajlar
+  history: Array<{ date: Date; action: string; description: string }>; // Geçmiş işlemler
+  result?: string; // Sonuç (opsiyonel)
+  closingNotes?: string; // Kapanış açıklaması (opsiyonel)
 }
 
-/**
- * Dava Şeması
- */
 const caseSchema = new Schema<ICase>(
   {
     caseNumber: { type: String, required: true, unique: true },
     title: { type: String, required: true },
     summary: { type: String, required: true },
-    plaintiff: {
+    applicant: {
       name: { type: String, required: true },
       email: { type: String, required: true },
       phone: { type: String, required: true },
     },
-    defendant: { type: String },
-    category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+    opponent: {
+      name: { type: String, required: true },
+      lawyer: { type: String },
+    },
+    lawyer: { type: Schema.Types.ObjectId, ref: "User", required: true },
     status: {
       type: String,
-      enum: Object.values(CaseStatus),
-      default: CaseStatus.OPEN,
+      required: true,
+      enum: ["aktif", "beklemede", "tamamlandı"],
     },
-    assignedLawyer: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    openingDate: { type: Date, required: true },
-    hearings: [{ type: Schema.Types.ObjectId, ref: "Hearing" }],
+    startDate: { type: Date, required: true },
+    endDate: { type: Date },
+    category: { type: String, required: true },
+    hearings: [
+      {
+        date: { type: Date, required: true },
+        time: { type: String, required: true },
+        description: { type: String, required: true },
+      },
+    ],
     documents: [
       {
         name: { type: String, required: true },
         type: { type: String, required: true },
-        pdfUrl: { type: String, required: true },
-        uploadedAt: { type: Date, default: Date.now },
+        date: { type: Date, required: true },
       },
     ],
-    statistics: {
-      durationInDays: { type: Number },
-      categoryAverage: { type: Number },
+    rightsViolation: {
+      category: { type: String },
+      description: { type: String },
     },
+    messages: [
+      {
+        sender: { type: String, required: true },
+        message: { type: String, required: true },
+        date: { type: Date, required: true },
+      },
+    ],
+    history: [
+      {
+        date: { type: Date, required: true },
+        action: { type: String, required: true },
+        description: { type: String, required: true },
+      },
+    ],
+    result: { type: String },
+    closingNotes: { type: String },
   },
   { timestamps: true }
 );
 
-const CaseModel = model<ICase>("Case", caseSchema);
+const Case = model<ICase>("Case", caseSchema);
 
-export default CaseModel;
+export default Case;

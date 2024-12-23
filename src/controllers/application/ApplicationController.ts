@@ -1,175 +1,80 @@
-import { Request, Response, NextFunction } from "express";
-import {
-  createApplication,
-  getApplications,
-  getApplicationById,
-  assignLawyer,
-  updateApplicationStatus,
-  addDocumentToApplication,
-  deleteApplication,
-} from "../../services/application/ApplicationService";
-import { ApplicationStatus } from "../../models/shared/applicationStatus";
+import { Request, Response } from "express";
+import ApplicationService from "../../services/application/ApplicationService";
 
-/**
- * Yeni başvuru oluşturma
- */
-export const createApplicationHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { tcNumber, name, surname, phone, email, address, category, title, details } = req.body;
-
-    if (!tcNumber || !name || !surname || !phone || !email || !address || !category || !title || !details) {
-      res.status(400).json({
-        error: "Gerekli alanlar eksik.",
-        missingFields: [
-          !tcNumber && "tcNumber",
-          !name && "name",
-          !surname && "surname",
-          !phone && "phone",
-          !email && "email",
-          !address && "address",
-          !category && "category",
-          !title && "title",
-          !details && "details",
-        ].filter(Boolean),
-      });
-      return;
-    }
-
-    const application = await createApplication(req.body);
-
-    res.status(201).json({
-      message: "Başvuru başarıyla oluşturuldu.",
-      data: application,
-    });
-  } catch (error) {
-    if (error instanceof Error) {
-      next({ status: 500, message: error.message });
-    } else {
-      next({ status: 500, message: "Bilinmeyen bir hata oluştu." });
+class ApplicationController {
+  // Başvuru Ekleme
+  async createApplication(req: Request, res: Response) {
+    try {
+      const data = req.body;
+      const application = await ApplicationService.createApplication(data);
+      res.status(201).json(application);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Bilinmeyen bir hata oluştu.");
+      res.status(400).json({ message: error.message });
     }
   }
-};
 
-/**
- * Tüm başvuruları listeleme
- */
-export const getApplicationsHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const filters = req.query;
-    const applications = await getApplications(filters);
-    res.status(200).json({
-      message: "Başvurular başarıyla listelendi.",
-      data: applications,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Tek bir başvuru bilgilerini getirme
- */
-export const getApplicationByIdHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { applicationId } = req.params;
-    const application = await getApplicationById(applicationId);
-    if (!application) {
-    res.status(404).json({ error: "Başvuru bulunamadı." });
-    }
-    res.status(200).json({
-      message: "Başvuru başarıyla getirildi.",
-      data: application,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Başvuruya avukat atama
- */
-export const assignLawyerHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { applicationId, lawyerId } = req.body;
-    const updatedApplication = await assignLawyer(applicationId, lawyerId);
-    if (!updatedApplication) {
-      res.status(404).json({ error: "Başvuru bulunamadı." });
-    }
-      res.status(200).json({
-      message: "Avukat başarıyla atandı.",
-      data: updatedApplication,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-/**
- * Başvuru durumunu güncelleme
- */
-export const updateApplicationStatusHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { applicationId, status } = req.body;
-
-    if (!Object.values(ApplicationStatus).includes(status)) {
-      res.status(400).json({ error: "Geçersiz başvuru durumu." });
-      return;
-    }
-
-    const updatedApplication = await updateApplicationStatus(applicationId, status);
-
-    if (!updatedApplication) {
-      res.status(404).json({ error: "Başvuru bulunamadı." });
-      return;
-    }
-
-    res.status(200).json({
-      message: "Başvuru durumu başarıyla güncellendi.",
-      data: updatedApplication,
-    });
-  } catch (error) {
-    if (error instanceof Error) {
-      next({ status: 500, message: error.message });
-    } else {
-      next({ status: 500, message: "Bilinmeyen bir hata oluştu." });
+  // Başvuru Güncelleme
+  async updateApplication(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const updatedApplication = await ApplicationService.updateApplication(id, updateData);
+      res.status(200).json(updatedApplication);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Bilinmeyen bir hata oluştu.");
+      res.status(400).json({ message: error.message });
     }
   }
-};
 
-
-/**
- * Başvuruya döküman ekleme
- */
-export const addDocumentToApplicationHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { applicationId, documentId } = req.body;
-    const updatedApplication = await addDocumentToApplication(applicationId, documentId);
-    if (!updatedApplication) {
-       res.status(404).json({ error: "Başvuru bulunamadı." });
+  // Başvuru Listesi
+  async getApplications(req: Request, res: Response) {
+    try {
+      const filter = req.query || {};
+      const applications = await ApplicationService.getApplications(filter);
+      res.status(200).json(applications);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Bilinmeyen bir hata oluştu.");
+      res.status(400).json({ message: error.message });
     }
-     res.status(200).json({
-      message: "Döküman başarıyla eklendi.",
-      data: updatedApplication,
-    });
-  } catch (error) {
-    next(error);
   }
-};
 
-/**
- * Başvuru silme
- */
-export const deleteApplicationHandler = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { applicationId } = req.params;
-    const deletedApplication = await deleteApplication(applicationId);
-    if (!deletedApplication) {
-       res.status(404).json({ error: "Başvuru bulunamadı." });
+  // Başvuru Detayları
+  async getApplicationById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const application = await ApplicationService.getApplicationById(id);
+      res.status(200).json(application);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Bilinmeyen bir hata oluştu.");
+      res.status(404).json({ message: error.message });
     }
-     res.status(200).json({
-      message: "Başvuru başarıyla silindi.",
-    });
-  } catch (error) {
-    next(error);
   }
-};
+
+  // Başvuru Silme
+  async deleteApplication(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await ApplicationService.deleteApplication(id);
+      res.status(204).send(); // No content response
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Bilinmeyen bir hata oluştu.");
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  // Avukat Atama
+  async assignLawyer(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { lawyerId } = req.body;
+      const updatedApplication = await ApplicationService.assignLawyer(id, lawyerId);
+      res.status(200).json(updatedApplication);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Bilinmeyen bir hata oluştu.");
+      res.status(400).json({ message: error.message });
+    }
+  }
+}
+
+export default new ApplicationController();

@@ -1,73 +1,87 @@
 import { Schema, model, Document, Types } from "mongoose";
-import { ApplicationStatus } from "../shared/applicationStatus";
-import { ICategory } from "../shared/category";
-import { ICity } from "../shared/city";
-import { IDocument } from "../shared/document";
 
-/**
- * Başvuru Şeması Arayüzü
- */
 export interface IApplication extends Document {
-  tcNumber: string; // Vatandaşın TC No
-  name: string; // Adı
-  surname: string; // Soyadı
-  phone: string; // Telefon
-  email: string; // E-posta
-  address: string; // Adres
-  category: Types.ObjectId | ICategory; // Olay Kategorisi
-  title: string; // Olay Başlığı
-  details: string; // Olay Detayları
-  documents?: Types.ObjectId[] | IDocument[]; // Opsiyonel dökümanlar
-  status: ApplicationStatus; // Başvuru durumu
-  assignedLawyer?: Types.ObjectId; // Atanmış avukatın ID'si (User Modeline referans)
-  city?: Types.ObjectId | ICity; // Opsiyonel: Şehir
-  complaintDate: Date; // Şikayet Tarihi
+  applicantName: string; // Başvuran adı
+  contactDetails: {
+    email: string;
+    phone: string;
+    address: string;
+  }; // İletişim bilgileri
+  eventTitle: string; // Etkinlik/olay başlığı
+  eventCategory: string; // Etkinlik kategorisi (ör: isHukuku, egitimHakki)
+  status: string; // Durum (işlemde, beklemede, tamamlandı)
+  date: Date; // Başvuru tarihi
+  assignedLawyer?: Types.ObjectId; // Atanmış avukat (opsiyonel)
+  description?: string; // Başvuru açıklaması (opsiyonel)
+  documents: Array<{ name: string; type: string; date: Date; url?: string }>; // Belgeler (Opsiyonel URL ile)
+  messages: Array<{ sender: string; message: string; date: Date }>; // Mesajlar
+  history: Array<{ date: Date; action: string; description: string }>; // Geçmiş işlemler
+  priority: string; // Öncelik durumu (ör: yüksek, orta, düşük)
+  relatedCases?: Types.ObjectId[]; // İlişkili davalar (opsiyonel)
 }
 
-/**
- * Başvuru Şeması
- */
 const applicationSchema = new Schema<IApplication>(
   {
-    tcNumber: {
+    applicantName: { type: String, required: true },
+    contactDetails: {
+      email: { type: String, required: true },
+      phone: { type: String, required: true },
+      address: { type: String, required: true },
+    },
+    eventTitle: { type: String, required: true },
+    eventCategory: {
       type: String,
       required: true,
-      minlength: 11,
-      maxlength: 11,
-      match: /^[0-9]{11}$/,
+      enum: [
+        "isHukuku",
+        "egitimHakki",
+        "ifadeOzgurlugu",
+        "kadinaKarsiSiddet",
+        "cocukHaklari",
+      ], // Örnek kategoriler
     },
-    name: { type: String, required: true },
-    surname: { type: String, required: true },
-    phone: {
-      type: String,
-      required: true,
-      match: /^[0-9]{10,15}$/,
-    },
-    email: {
-      type: String,
-      required: true,
-      match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    },
-    address: { type: String, required: true },
-    category: { type: Types.ObjectId, ref: "Category", required: true },
-    title: { type: String, required: true },
-    details: { type: String, required: true },
-    documents: [{ type: Types.ObjectId, ref: "Document" }],
     status: {
       type: String,
-      enum: Object.values(ApplicationStatus),
-      default: ApplicationStatus.PENDING,
+      default: "beklemede",
+      required: true,
+      enum: ["işlemde", "beklemede", "tamamlandı"],
     },
-    assignedLawyer: { type: Types.ObjectId, ref: "User" },
-    city: { type: Types.ObjectId, ref: "City" },
-    complaintDate: { type: Date, required: true }, // Şikayet tarihi zorunlu
+    date: { type: Date, required: true },
+    assignedLawyer: { type: Schema.Types.ObjectId, ref: "User" },
+    description: { type: String },
+    documents: [
+      {
+        name: { type: String, required: true },
+        type: { type: String, required: true },
+        date: { type: Date, required: true },
+        url: { type: String }, // Opsiyonel URL
+      },
+    ],
+    messages: [
+      {
+        sender: { type: String, required: true },
+        message: { type: String, required: true },
+        date: { type: Date, required: true },
+      },
+    ],
+    history: [
+      {
+        date: { type: Date, required: true },
+        action: { type: String, required: true },
+        description: { type: String, required: true },
+      },
+    ],
+    priority: {
+      type: String,
+      required: true,
+      default: "orta",
+      enum: ["yüksek", "orta", "düşük"],
+    },
+    relatedCases: [{ type: Schema.Types.ObjectId, ref: "Case" }], // Opsiyonel ilişkili davalar
   },
-  { timestamps: true }
+  { timestamps: true } // createdAt ve updatedAt otomatik eklenir
 );
 
-/**
- * Başvuru Modeli
- */
 const Application = model<IApplication>("Application", applicationSchema);
 
 export default Application;

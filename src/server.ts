@@ -8,6 +8,9 @@ import helmet from "helmet";
 import { errorHandler } from "./middlewares/errorHandler";
 import { seedBaroAdmin } from "./services/auth/AuthService";
 
+import application from "./models/application/application";
+import Application from "./models/application/application";
+
 const app = express();
 
 app.use(errorHandler);
@@ -22,6 +25,8 @@ connectDB();
 
 // Rotaların Yüklenmesi
 app.use("/api", routes); // Tüm API rotaları "/api" altına yönlendirilir
+
+
 
 // Sağlık Kontrolü (Basit bir rota)
 app.get("/", (req: Request, res: Response) => {
