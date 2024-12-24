@@ -1,105 +1,38 @@
 import { Router } from "express";
-import asyncHandler from "express-async-handler";
-import {
-  createCaseHandler,
-  getCasesHandler,
-  getCaseByIdHandler,
-  updateCaseStatusHandler,
-  addDocumentToCaseHandler,
-  getCaseDocumentsHandler,
-  addHearingHandler,
-  getHearingsHandler,
-} from "../../controllers/case/CaseController";
-import { authenticate, authorize } from "../../middlewares/auth.middleware";
+import CaseController from "../../controllers/case/CaseController";
+import accessControl from "../../middlewares/accessControl"; // Kullanıcı rolüne göre kontrol
 import { UserRole } from "../../models/auth/user";
 
 const router = Router();
 
-/**
- * Yeni dava oluşturma
- * Erişim: Baro Yöneticisi ve Avukat
- */
-router.post(
-  "/create",
+// Baro Görevlileri için Tüm Davalar
+router.get("/", accessControl([UserRole.BARO_OFFICER, UserRole.ADMIN]), CaseController.getAllCases);
 
-  asyncHandler(createCaseHandler)
-);
+// Avukatlar için Davalar
+router.get("/lawyer", accessControl([UserRole.LAWYER ]), CaseController.getCasesForLawyer);
 
-/**
- * Tüm davaları listeleme
- * Erişim: Baro Yöneticisi ve Baro Üyesi
- */
-router.get(
-  "/",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.BARO_OFFICER]),
-  asyncHandler(getCasesHandler)
-);
+// Dava Ekleme
+router.post("/", accessControl([UserRole.BARO_OFFICER, UserRole.ADMIN]), CaseController.createCase);
 
-/**
- * Tek bir dava bilgilerini getirme
- * Erişim: Baro Yöneticisi, Baro Üyesi ve Atanmış Avukat
- */
-router.get(
-  "/:caseId",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.BARO_OFFICER, UserRole.LAWYER]),
-  asyncHandler(getCaseByIdHandler)
-);
+// Dava Güncelleme
+router.put("/:id", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.updateCase);
 
-/**
- * Dava durumu güncelleme
- * Erişim: Baro Yöneticisi ve Atanmış Avukat
- */
-router.patch(
-  "/update-status",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.LAWYER]),
-  asyncHandler(updateCaseStatusHandler)
-);
+// Dava Detayları
+router.get("/:id", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.getCaseById);
 
-/**
- * Davaya belge ekleme
- * Erişim: Baro Yöneticisi ve Atanmış Avukat
- */
-// router.post(
-//   "/add-document",
-//   authenticate,
-//   authorize([UserRole.ADMIN, UserRole.LAWYER]),
-//   asyncHandler(addDocumentToCaseHandler)
-// );
+// Dava Silme
+router.delete("/:id", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.deleteCase);
 
-/**
- * Davaya ait belgeleri listeleme
- * Erişim: Baro Yöneticisi, Baro Üyesi ve Atanmış Avukat
- */
-router.get(
-  "/:caseId/documents",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.BARO_OFFICER, UserRole.LAWYER]),
-  asyncHandler(getCaseDocumentsHandler)
-);
+// Duruşma Güncelleme
+router.put("/:id/hearings", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.updateHearings);
 
-/**
- * Yeni duruşma ekleme
- * Erişim: Atanmış Avukat
- */
-router.post(
-  "/add-hearing",
-  authenticate,
-  authorize([UserRole.LAWYER]),
-  asyncHandler(addHearingHandler)
-);
+// Mesaj Gönderme
+router.post("/:id/messages", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.sendMessage);
 
-/**
- * Davaya ait duruşmaları listeleme
- * Erişim: Baro Yöneticisi, Baro Üyesi ve Atanmış Avukat
- */
-router.get(
-  "/:caseId/hearings",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.BARO_OFFICER, UserRole.LAWYER]),
-  asyncHandler(getHearingsHandler)
-);
+// Tarihçe Güncelleme
+router.put("/:id/history", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.updateHistory);
+
+// Hak İhlali İlişkilendirme
+router.put("/:id/rights-violation", accessControl([UserRole.BARO_OFFICER, UserRole.ADMIN]), CaseController.associateRightsViolation);
 
 export default router;

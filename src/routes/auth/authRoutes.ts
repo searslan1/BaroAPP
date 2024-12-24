@@ -8,7 +8,7 @@ import {
   logoutUser,
   verifyUserHandler
 } from "../../controllers/auth/AuthController";
-import { authenticate, authorize } from "../../middlewares/auth.middleware";
+import { authenticate, authorize } from "../../middlewares/authMiddleware";
 import { UserRole } from "../../models/auth/user";
 
 const router = Router();

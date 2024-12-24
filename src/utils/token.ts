@@ -12,7 +12,9 @@ export const generateAccessToken = (user: { id: string; role: string , isActive:
       isActive: user.isActive,
     },
     JWT_SECRET as string, // `undefined` olamayacağı garanti ediliyor
-    { expiresIn: "1m" } // Access Token geçerlilik süresi: 15 dakika
+    { expiresIn: "10000000m" } // Access Token geçerlilik süresi: 15 dakika
+    
+    //****Refresh yapısı kurulana kadar uygulama accessToken üzerinde çalışacak. Güvenlik açığı olduğu için yakın zamanda çözülmeli****
   );
 };
 

@@ -1,200 +1,120 @@
-import { Request, Response, NextFunction } from "express";
-import {
-  createCase,
-  getCases,
-  getCaseById,
-  updateCaseStatus,
-  addDocumentToCase,
-  getCaseDocuments,
-  addHearing,
-  getHearings,
-} from "../../services/case/CaseService";
-import { CaseStatus } from "../../models/case/case";
+import { Request, Response } from "express";
+import CaseService from "../../services/case/CaseService";
 
-/**
- * Yeni dava oluşturma
- */
-export const createCaseHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+class CaseController {
+  // 1. Dava Ekleme
+  async createCase(req: Request, res: Response) {
     try {
-      const { caseNumber, title, plaintiff, category, assignedLawyer } = req.body;
-  
-      // Girdi doğrulama
-      if (!caseNumber || !title || !plaintiff || !category || !assignedLawyer) {
-        res.status(400).json({ message: "Gerekli dava bilgileri eksik." });
-        return;
-      }
-  
-      const caseData = await createCase(req.body);
-  
-      res.status(201).json({
-        message: "Dava başarıyla oluşturuldu.",
-        data: caseData,
-      });
+      const data = req.body;
+      const newCase = await CaseService.createCase(data);
+      res.status(201).json(newCase);
     } catch (error) {
-      next(error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
     }
-  };
-
-/**
- * Tüm davaları listeleme
- */
-export const getCasesHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const filters = req.query;
-  
-      // Filtre doğrulama
-      if (filters.status && !Object.values(CaseStatus).includes(filters.status as CaseStatus)) {
-        res.status(400).json({ message: "Geçersiz dava durumu filtresi." });
-        return;
-      }
-  
-      const cases = await getCases(filters);
-  
-      res.status(200).json({
-        message: "Davalar başarıyla listelendi.",
-        data: cases,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-/**
- * Tek bir dava bilgilerini getirme
- */
-export const getCaseByIdHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { caseId } = req.params;
-  
-      if (!caseId) {
-        res.status(400).json({ message: "Dava ID'si eksik." });
-        return;
-      }
-  
-      const caseData = await getCaseById(caseId);
-  
-      if (!caseData) {
-        res.status(404).json({ message: "Dava bulunamadı.", data: null });
-        return;
-      }
-  
-      res.status(200).json({
-        message: "Dava başarıyla getirildi.",
-        data: caseData,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-  
-
-/**
- * Dava durumu güncelleme
- */
-export const updateCaseStatusHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { caseId, status } = req.body;
-  
-      if (!caseId || !status) {
-        res.status(400).json({ message: "Gerekli bilgiler eksik." });
-        return;
-      }
-  
-      if (!Object.values(CaseStatus).includes(status)) {
-        res.status(400).json({ message: "Geçersiz dava durumu." });
-        return;
-      }
-  
-      const updatedCase = await updateCaseStatus(caseId, status);
-  
-      res.status(200).json({
-        message: "Dava durumu başarıyla güncellendi.",
-        data: updatedCase,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-  
-
-/**
- * Davaya belge ekleme
- */
-export const addDocumentToCaseHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { caseId, document } = req.body;
-  
-      if (!caseId || !document || !document.name || !document.type || !document.pdfUrl) {
-        res.status(400).json({ message: "Gerekli belge bilgileri eksik." });
-        return;
-      }
-  
-      const updatedCase = await addDocumentToCase(caseId, document);
-  
-      res.status(200).json({
-        message: "Belge başarıyla eklendi.",
-        data: updatedCase,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-  
-
-/**
- * Davaya ait belgeleri listeleme
- */
-export const getCaseDocumentsHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { caseId } = req.params;
-    const documents = await getCaseDocuments(caseId);
-
-    res.status(200).json({
-      message: "Belgeler başarıyla listelendi.",
-      data: documents,
-    });
-  } catch (error) {
-    next(error);
   }
-};
 
-/**
- * Yeni duruşma ekleme
- */
-export const addHearingHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // 2. Dava Güncelleme
+  async updateCase(req: Request, res: Response) {
     try {
-      const { caseId, hearingData } = req.body;
-  
-      if (!caseId || !hearingData || !hearingData.date || !hearingData.status) {
-        res.status(400).json({ message: "Gerekli duruşma bilgileri eksik." });
-        return;
-      }
-  
-      const hearing = await addHearing(caseId, hearingData);
-  
-      res.status(201).json({
-        message: "Duruşma başarıyla eklendi.",
-        data: hearing,
-      });
+      const { id } = req.params;
+      const updateData = req.body;
+      const updatedCase = await CaseService.updateCase(id, updateData);
+      res.status(200).json(updatedCase);
     } catch (error) {
-      next(error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
     }
-  };
-  
-
-/**
- * Davaya ait duruşmaları listeleme
- */
-export const getHearingsHandler = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { caseId } = req.params;
-    const hearings = await getHearings(caseId);
-
-    res.status(200).json({
-      message: "Duruşmalar başarıyla listelendi.",
-      data: hearings,
-    });
-  } catch (error) {
-    next(error);
   }
-};
+
+  // 3. Tüm Davaları Listeleme
+  async getAllCases(req: Request, res: Response) {
+    try {
+      const cases = await CaseService.getAllCases();
+      res.status(200).json(cases);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+// 4. Avukat için Davaları Listeleme
+async getCasesForLawyer(req: Request, res: Response) {
+    try {
+      const lawyerId = req.user!.id; // Middleware’den gelen avukat ID'si
+      const cases = await CaseService.getCasesForLawyer(lawyerId);
+      res.status(200).json(cases);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+  // 5. Dava Detayları
+  async getCaseById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const caseDetails = await CaseService.getCaseById(id);
+      res.status(200).json(caseDetails);
+    } catch (error) {
+      res.status(404).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+  // 6. Dava Silme
+  async deleteCase(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await CaseService.deleteCase(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+  // 7. Duruşma Ekleme/Güncelleme
+  async updateHearings(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { hearings } = req.body;
+      const updatedCase = await CaseService.updateHearings(id, hearings);
+      res.status(200).json(updatedCase);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+  // 8. Mesaj Gönderme
+  async sendMessage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const message = req.body;
+      const updatedCase = await CaseService.sendMessage(id, message);
+      res.status(200).json(updatedCase);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+  // 9. Tarihçe Güncelleme
+  async updateHistory(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { history } = req.body;
+      const updatedCase = await CaseService.updateHistory(id, history);
+      res.status(200).json(updatedCase);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+
+  // 10. Hak İhlali İlişkilendirme
+  async associateRightsViolation(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { rightsViolation } = req.body;
+      const updatedCase = await CaseService.associateRightsViolation(id, rightsViolation);
+      res.status(200).json(updatedCase);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu." });
+    }
+  }
+}
+
+export default new CaseController();

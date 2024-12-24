@@ -5,24 +5,25 @@ export interface ICase extends Document {
   title: string; // Dava adı
   summary: string; // Dava özeti
   applicant: { name: string; email: string; phone: string }; // Başvuran bilgisi
-  opponent: { name: string; lawyer?: string }; // Karşı taraf bilgisi (opsiyonel avukat)
-  lawyer: Types.ObjectId; // İlgili avukatın User modelindeki ID'si
+  opponent: { name: string; lawyer?: string }; // Karşı taraf bilgisi
+  lawyer: string; // Atanan avukatın User modelindeki ID'si
   status: string; // Durum (aktif, beklemede, tamamlandı)
   startDate: Date; // Başlangıç tarihi
   endDate?: Date; // Kapanış tarihi (opsiyonel)
-  category: string; // Dava kategorisi (ör. ceza, medeni)
-  hearings: Array<{ date: Date; time: string; description: string }>; // Duruşmalar
-  documents: Array<{ name: string; type: string; date: Date }>; // Belgeler
-  rightsViolation?: { category: string; description: string }; // Hak ihlaliyle ilişki (opsiyonel)
+  category: string; // Kategori
+  hearings: Array<{ date: Date; time: string; description: string }>; // Duruşma tarihleri
+  documents: Array<{
+      pdfUrl: string; name: string; type: string; date: Date 
+}>; // Belgeler
   messages: Array<{ sender: string; message: string; date: Date }>; // Mesajlar
   history: Array<{ date: Date; action: string; description: string }>; // Geçmiş işlemler
-  result?: string; // Sonuç (opsiyonel)
-  closingNotes?: string; // Kapanış açıklaması (opsiyonel)
+  result?: string; // Dava sonucu (opsiyonel)
+  closingNotes?: string; // Kapanış notları (opsiyonel)
 }
 
 const caseSchema = new Schema<ICase>(
   {
-    caseNumber: { type: String, required: true, unique: true },
+    caseNumber: { type: String, required: true, unique: true }, // Unik dava numarası
     title: { type: String, required: true },
     summary: { type: String, required: true },
     applicant: {
@@ -34,7 +35,8 @@ const caseSchema = new Schema<ICase>(
       name: { type: String, required: true },
       lawyer: { type: String },
     },
-    lawyer: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    lawyer: { type: String, required: true },
+   // lawyer: { type: Schema.Types.ObjectId, ref: "User", required: true }, // User modeline referans
     status: {
       type: String,
       required: true,
@@ -42,7 +44,7 @@ const caseSchema = new Schema<ICase>(
     },
     startDate: { type: Date, required: true },
     endDate: { type: Date },
-    category: { type: String, required: true },
+    category: { type: String, required: true }, // Ceza, Medeni, İş vb.
     hearings: [
       {
         date: { type: Date, required: true },
@@ -52,15 +54,11 @@ const caseSchema = new Schema<ICase>(
     ],
     documents: [
       {
-        name: { type: String, required: true },
+        name: { type: String, required: false },
         type: { type: String, required: true },
         date: { type: Date, required: true },
       },
     ],
-    rightsViolation: {
-      category: { type: String },
-      description: { type: String },
-    },
     messages: [
       {
         sender: { type: String, required: true },
@@ -78,7 +76,7 @@ const caseSchema = new Schema<ICase>(
     result: { type: String },
     closingNotes: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true } // createdAt ve updatedAt otomatik eklenir
 );
 
 const Case = model<ICase>("Case", caseSchema);

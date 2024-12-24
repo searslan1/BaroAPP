@@ -66,3 +66,32 @@ export const authorize = (roles: UserRole[]) => {
     next(); // Yetkilendirme başarılı, bir sonraki middleware'e geç
   };
 };
+
+interface UserRequest extends Request {
+  user?: {
+    id: string;
+    role: UserRole;
+  };
+}
+const authMiddleware = (req: UserRequest, res: Response, next: NextFunction) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1]; // "Bearer <token>"
+    if (!token) {
+      return res.status(401).json({ message: "Yetkilendirme token'ı eksik." });
+    }
+
+    const secretKey = process.env.JWT_SECRET || "defaultSecretKey"; // JWT Secret Key
+    const decoded = jwt.verify(token, secretKey) as { id: string; role: UserRole };
+
+    req.user = {
+      id: decoded.id,
+      role: decoded.role,
+    };
+
+    next(); // Başarılı doğrulama, sonraki middleware'e geç
+  } catch (error) {
+    res.status(401).json({ message: "Yetkilendirme başarısız." });
+  }
+};
+
+export default authMiddleware;
