@@ -28,8 +28,8 @@ export const uploadCaseDocument = async (
   caseData.documents.push({
     name: fileName,
     type: mimeType,
-    pdfUrl: s3Url,
-    uploadedAt: new Date(),
+    date: new Date(), // date yerine uploadedAt yerine modelde belirttiğiniz tarihi ekledim
+    pdfUrl: s3Url, // pdfUrl yerine genel url ismini kullandım
   });
 
   await caseData.save();

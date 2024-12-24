@@ -9,8 +9,7 @@ export const deleteFileHandler = async (req: Request, res: Response, next: NextF
     const { caseId, fileUrl } = req.body;
 
     if (!caseId || !fileUrl) {
-      res.status(400).json({ message: "Gerekli bilgiler eksik." });
-      return;
+      return res.status(400).json({ message: "Gerekli bilgiler eksik." });
     }
 
     const updatedCase = await deleteCaseDocument(caseId, fileUrl);
@@ -20,6 +19,6 @@ export const deleteFileHandler = async (req: Request, res: Response, next: NextF
       data: updatedCase,
     });
   } catch (error) {
-    next(error);
+    next(error instanceof Error ? error : new Error("Bilinmeyen bir hata oluştu."));
   }
 };

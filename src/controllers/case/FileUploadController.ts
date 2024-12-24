@@ -9,21 +9,20 @@ export const uploadFileHandler = async (req: Request, res: Response, next: NextF
   try {
     const { caseId } = req.body;
 
-    // caseId'nin geçerli bir ObjectId olup olmadığını kontrol edin
+    // `caseId` kontrolü
     if (!mongoose.Types.ObjectId.isValid(caseId)) {
-      res.status(400).json({ message: "Geçersiz caseId. Lütfen doğru bir ObjectId gönderin." });
-      return;
+      return res.status(400).json({ message: "Geçersiz caseId. Lütfen doğru bir ObjectId gönderin." });
     }
 
     if (!req.file) {
-      res.status(400).json({ message: "Dosya yüklenmedi." });
-      return;
+      return res.status(400).json({ message: "Dosya yüklenmedi." });
     }
 
     const fileBuffer = req.file.buffer;
     const fileName = req.file.originalname;
     const mimeType = req.file.mimetype;
 
+    // Dosyayı yükleme ve kaydetme
     const updatedCase = await uploadCaseDocument(caseId, fileBuffer, fileName, mimeType);
 
     res.status(200).json({

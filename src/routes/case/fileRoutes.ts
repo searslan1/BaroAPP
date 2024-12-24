@@ -13,22 +13,17 @@ const router = Router();
  */
 router.post(
   "/upload",
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.LAWYER]),
-  upload.single("file"), // Tek dosya yükleme
-  uploadFileHandler
+
+  upload.single("file") // Tek dosya yükleme
+  
 );
 /**
  * Davadan dosya silme
  * Erişim: Baro Yöneticisi ve Atanmış Avukat
  */
 router.delete(
-    "/delete",
-    authenticate,
-    authorize([UserRole.ADMIN, UserRole.LAWYER]),
-    deleteFileHandler
+    "/delete"
   );
-  router.post("/uploadd", upload.single("file"), uploadFileHandler);
 
 
 export default router;

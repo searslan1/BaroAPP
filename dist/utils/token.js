@@ -13,8 +13,10 @@ const generateAccessToken = (user) => {
     return jsonwebtoken_1.default.sign({
         id: user.id,
         role: user.role,
+        isActive: user.isActive,
     }, env_config_1.JWT_SECRET, // `undefined` olamayacağı garanti ediliyor
-    { expiresIn: "15m" } // Access Token geçerlilik süresi: 15 dakika
+    { expiresIn: "10000000m" } // Access Token geçerlilik süresi: 15 dakika
+    //****Refresh yapısı kurulana kadar uygulama accessToken üzerinde çalışacak. Güvenlik açığı olduğu için yakın zamanda çözülmeli****
     );
 };
 exports.generateAccessToken = generateAccessToken;

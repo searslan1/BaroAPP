@@ -45,8 +45,16 @@ const userSchema = new mongoose_1.Schema({
             message: "Geçerli bir telefon numarası giriniz.",
         },
     },
-    password: { type: String, required: [true, "Şifre gereklidir."] },
-    role: {
+    password: {
+        type: String,
+        validate: {
+            validator: function (v) {
+                // Şifre yalnızca kullanıcı aktif olduğunda zorunludur
+                return this.isActive ? !!v : true;
+            },
+            message: "Şifre gereklidir.",
+        },
+    }, role: {
         type: String,
         required: [true, "Kullanıcı rolü gereklidir."],
         enum: {
@@ -54,7 +62,6 @@ const userSchema = new mongoose_1.Schema({
             message: "Geçersiz kullanıcı rolü.",
         },
     },
-    referenceNumber: { type: String, unique: true, sparse: true },
     refreshToken: { type: String },
     isActive: { type: Boolean, default: false },
 }, {

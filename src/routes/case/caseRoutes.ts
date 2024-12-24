@@ -12,7 +12,7 @@ router.get("/", accessControl([UserRole.BARO_OFFICER, UserRole.ADMIN]), CaseCont
 router.get("/lawyer", accessControl([UserRole.LAWYER ]), CaseController.getCasesForLawyer);
 
 // Dava Ekleme
-router.post("/", accessControl([UserRole.BARO_OFFICER, UserRole.ADMIN]), CaseController.createCase);
+router.post("/", accessControl([UserRole.BARO_OFFICER, UserRole.ADMIN, UserRole.LAWYER], ), CaseController.createCase);
 
 // Dava Güncelleme
 router.put("/:id", accessControl([UserRole.BARO_OFFICER, UserRole.LAWYER, UserRole.ADMIN]), CaseController.updateCase);

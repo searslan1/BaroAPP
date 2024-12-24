@@ -1,5 +1,4 @@
 "use strict";
-/// <reference path="./types/express/index.d.ts" />
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,14 +7,14 @@ const express_1 = __importDefault(require("express"));
 const db_config_1 = __importDefault(require("./config/db.config"));
 const env_config_1 = require("./config/env.config");
 const routes_1 = __importDefault(require("./routes")); // Tüm rotaların toplandığı index.ts
-const cors_1 = __importDefault(require("cors"));
+const cors_middleware_1 = __importDefault(require("./middlewares/cors.middleware"));
 const helmet_1 = __importDefault(require("helmet"));
 const errorHandler_1 = require("./middlewares/errorHandler");
 const app = (0, express_1.default)();
 app.use(errorHandler_1.errorHandler);
 // Middleware
 app.use(express_1.default.json());
-app.use((0, cors_1.default)()); // CORS yapılandırması
+app.use(cors_middleware_1.default);
 app.use((0, helmet_1.default)()); // Temel güvenlik başlıkları
 // Veritabanı Bağlantısı
 (0, db_config_1.default)();

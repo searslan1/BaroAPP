@@ -38,7 +38,14 @@ const applicationSchema = new Schema<IApplication>(
         "ifadeOzgurlugu",
         "kadinaKarsiSiddet",
         "cocukHaklari",
-      ], // Örnek kategoriler
+        "insanHaklari",
+        "cezaHukuku",
+        "sosyalGuvenlik",
+        "trafikKazasi",
+        "bosanmaDavasi",
+        "mirasHukuku",
+        "tuketiciHaklari"
+      ], 
     },
     status: {
       type: String,

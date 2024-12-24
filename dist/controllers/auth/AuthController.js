@@ -1,51 +1,57 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logoutHandler = exports.refreshHandler = exports.completeRegistrationHandler = exports.login = exports.createUser = void 0;
+exports.verifyUserHandler = exports.logoutUser = exports.refreshToken = exports.completeUserRegistration = exports.loginUser = exports.registerUser = void 0;
 const AuthService_1 = require("../../services/auth/AuthService");
 /**
- * Baro üyesi veya avukat oluşturma (Referans numarası ile)
+ * Baro üyesi veya avukat oluşturma
  */
-const createUser = async (req, res, next) => {
+const registerUser = async (req, res, next) => {
     const { role, tcNumber, name, surname } = req.body;
     try {
         if (!role || !tcNumber || !name || !surname) {
-            res.status(400).json({ message: "Tüm alanlar gereklidir." });
+            res.status(400).json({ error: "Tüm alanlar gereklidir." });
             return;
         }
-        const referenceNumber = await (0, AuthService_1.createUserWithReference)(role, tcNumber, name, surname);
-        res.status(201).json({ message: "Kullanıcı başarıyla oluşturuldu.", referenceNumber });
+        const temporaryPassword = await (0, AuthService_1.createUserWithPassword)(role, tcNumber, name, surname);
+        res.status(201).json({
+            message: "Kullanıcı başarıyla oluşturuldu.",
+            data: { temporaryPassword },
+        });
     }
     catch (error) {
         next(error);
     }
 };
-exports.createUser = createUser;
+exports.registerUser = registerUser;
 /**
- * TC ve Referans Numarası ile giriş yapma
+ * Giriş yapma
  */
-const login = async (req, res, next) => {
-    const { tcNumber, referenceNumber } = req.body;
+const loginUser = async (req, res, next) => {
+    const { tcNumber, password } = req.body;
     try {
-        if (!tcNumber || !referenceNumber) {
-            res.status(400).json({ message: "TC ve Referans Numarası gereklidir." });
+        if (!tcNumber || !password) {
+            res.status(400).json({ error: "TC Kimlik Numarası ve Şifre gereklidir." });
             return;
         }
-        const tokens = await (0, AuthService_1.loginWithReference)(tcNumber, referenceNumber);
-        res.status(200).json({ message: "Giriş başarılı.", ...tokens });
+        const tokens = await (0, AuthService_1.loginWithPassword)(tcNumber, password);
+        res.status(200).json({
+            message: "Giriş başarılı.",
+            data: tokens,
+        });
     }
     catch (error) {
         next(error);
     }
 };
-exports.login = login;
+exports.loginUser = loginUser;
 /**
- * Eksik bilgileri doldurup tam kayıt yapma
+ * Tam kayıt işlemi
  */
-const completeRegistrationHandler = async (req, res, next) => {
+const completeUserRegistration = async (req, res, next) => {
     const { tcNumber, email, phone, password } = req.body;
     try {
         if (!tcNumber || !email || !phone || !password) {
-            res.status(400).json({ message: "Tüm alanlar gereklidir." });
+            res.status(400).json({ error: "Tüm alanlar gereklidir." });
             return;
         }
         await (0, AuthService_1.completeRegistration)(tcNumber, email, phone, password);
@@ -55,33 +61,37 @@ const completeRegistrationHandler = async (req, res, next) => {
         next(error);
     }
 };
-exports.completeRegistrationHandler = completeRegistrationHandler;
+exports.completeUserRegistration = completeUserRegistration;
 /**
- * Refresh Token ile Access Token yenileme
+ * Access Token yenileme
  */
-const refreshHandler = async (req, res, next) => {
+const refreshToken = async (req, res, next) => {
     const { refreshToken } = req.body;
+    console.log('refreshhhhhhhhh');
     try {
         if (!refreshToken) {
-            res.status(400).json({ message: "Refresh Token gereklidir." });
+            res.status(400).json({ error: "Refresh Token gereklidir." });
             return;
         }
         const accessToken = await (0, AuthService_1.refreshAccessToken)(refreshToken);
-        res.status(200).json({ message: "Access Token yenilendi.", accessToken });
+        res.status(200).json({
+            message: "Access Token yenilendi.",
+            data: { accessToken },
+        });
     }
     catch (error) {
         next(error);
     }
 };
-exports.refreshHandler = refreshHandler;
+exports.refreshToken = refreshToken;
 /**
- * Kullanıcı çıkışı (Logout)
+ * Kullanıcı çıkışı
  */
-const logoutHandler = async (req, res, next) => {
+const logoutUser = async (req, res, next) => {
     const { userId } = req.body;
     try {
         if (!userId) {
-            res.status(400).json({ message: "Kullanıcı kimliği gereklidir." });
+            res.status(400).json({ error: "Kullanıcı kimliği gereklidir." });
             return;
         }
         await (0, AuthService_1.logout)(userId);
@@ -91,4 +101,24 @@ const logoutHandler = async (req, res, next) => {
         next(error);
     }
 };
-exports.logoutHandler = logoutHandler;
+exports.logoutUser = logoutUser;
+/**
+ * Kullanıcı doğrulama kontrolcüsü
+ */
+const verifyUserHandler = async (req, res, next) => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ error: "Yetkisiz erişim. Kullanıcı doğrulanamadı." });
+            return;
+        }
+        const userInfo = await (0, AuthService_1.verifyUser)(req.user.id);
+        res.status(200).json({
+            message: "Kullanıcı doğrulandı.",
+            data: userInfo,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+exports.verifyUserHandler = verifyUserHandler;
