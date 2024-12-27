@@ -11,8 +11,8 @@ export enum UserRole {
 // Kullanıcı Şeması Arayüzü
 export interface IUser extends Document {
   tcNumber: string; // TC Kimlik Numarası
-  name: string; // Adı
-  surname: string; // Soyadı
+  name?: string; // Adı
+  surname?: string; // Soyadı
   email?: string; // E-posta (opsiyonel)
   phone?: string; // Telefon (opsiyonel)
   password: string; // Şifre (hashlenmiş)
@@ -38,8 +38,8 @@ const userSchema = new Schema<IUser>(
         message: "Geçerli bir TC Kimlik Numarası giriniz.",
       },
     },
-    name: { type: String, required: [true, "Ad gereklidir."] },
-    surname: { type: String, required: [true, "Soyad gereklidir."] },
+    name: { type: String, /*required: [true, "Ad gereklidir."]*/ },
+    surname: { type: String, /*required: [true, "Soyad gereklidir.]"*/ },
     email: {
       type: String,
       lowercase: true,

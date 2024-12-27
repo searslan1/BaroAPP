@@ -62,12 +62,15 @@ class UserController {
 
   // Kullanıcı kaydı ve şifre oluşturma
   async createUserWithPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    console.log("sssssssssssssssssssssssss",req.body);
+
     try {
       const { role, tcNumber } = req.body;
       if (!role || !tcNumber) {
         res.status(400).json({ message: "Rol ve TC Kimlik Numarası gerekli." });
         return;
       }
+
       const password = await createUserWithPassword(role as UserRole, tcNumber);
       res.status(201).json({ message: "Kullanıcı oluşturuldu.", password });
     } catch (error) {
