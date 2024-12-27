@@ -1,9 +1,7 @@
 import { Router } from "express";
 import asyncHandler from "express-async-handler";
 import {
-  registerUser,
   loginUser,
-  completeUserRegistration,
   refreshToken,
   logoutUser,
   verifyUserHandler
@@ -13,16 +11,6 @@ import { UserRole } from "../../models/auth/user";
 
 const router = Router();
 
-/**
- * Baro üyesi veya avukat oluşturma (Baro yöneticisi tarafından)
- * Yetki: Sadece Admin (Baro Yöneticisi)
- */
-router.post(
-  "/register",
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  asyncHandler(registerUser)
-);
 
 /**
  * Kullanıcı giriş yapma (Referans numarası ile)
@@ -32,7 +20,6 @@ router.post("/login", asyncHandler(loginUser));
 /**
  * Eksik bilgileri doldurarak tam kayıt işlemi
  */
-router.post("/complete-registration", asyncHandler(completeUserRegistration));
 
 /**
  * Refresh Token ile Access Token yenileme

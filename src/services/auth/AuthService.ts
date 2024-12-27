@@ -5,48 +5,6 @@ import { v4 as uuidv4 } from "uuid";
 import { Error } from "mongoose";
 
 
-/**
- * Rastgele şifre üretir.
- */
-function generateRandomPassword(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
-  let password = "";
-  for (let i = 0; i < 10; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-/**
- * Baro üyesi veya avukatı kaydetmek için password oluşturma
- */
-export const createUserWithPassword = async (
-  role: UserRole,
-  tcNumber: string,
-  name: string,
-  surname: string
-): Promise<string> => {
-  // Rastgele şifre oluştur
-  const temporaryPassword = generateRandomPassword();
-
-  // Şifreyi hashle
-  const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
-
-  // Kullanıcı oluştur
-  const newUser = new User({
-    tcNumber,
-    name,
-    surname,
-    password: hashedPassword,
-    role,
-    isActive: false, // Tam kayıt yapılana kadar aktif değil
-  });
-
-  await newUser.save();
-
-  // Düz metin şifreyi döndür
-  return temporaryPassword;
-};
 
 /**
  * TC Kimlik Numarası ve Referans Numarası ile giriş yapma
@@ -180,3 +138,5 @@ export const seedBaroAdmin = async () => {
 };
 
 seedBaroAdmin();
+
+

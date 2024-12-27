@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import {
-  createUserWithPassword,
   loginWithPassword,
   completeRegistration,
   refreshAccessToken,
@@ -9,28 +8,6 @@ import {
 
 } from "../../services/auth/AuthService";
 
-/**
- * Baro üyesi veya avukat oluşturma
- */
-export const registerUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const { role, tcNumber, name, surname } = req.body;
-
-  try {
-    if (!role || !tcNumber || !name || !surname) {
-      res.status(400).json({ error: "Tüm alanlar gereklidir." });
-      return;
-    }
-
-    const temporaryPassword = await createUserWithPassword(role, tcNumber, name, surname);
-
-    res.status(201).json({
-      message: "Kullanıcı başarıyla oluşturuldu.",
-      data: { temporaryPassword },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 /**
  * Giriş yapma
@@ -55,28 +32,6 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-/**
- * Tam kayıt işlemi
- */
-export const completeUserRegistration = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const { tcNumber, email, phone, password } = req.body;
-
-  try {
-    if (!tcNumber || !email || !phone || !password) {
-      res.status(400).json({ error: "Tüm alanlar gereklidir." });
-      return;
-    }
-
-    await completeRegistration(tcNumber, email, phone, password);
-    res.status(200).json({ message: "Kayıt başarıyla tamamlandı." });
-  } catch (error) {
-    next(error);
-  }
-};
 
 /**
  * Access Token yenileme

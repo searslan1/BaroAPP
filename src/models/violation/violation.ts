@@ -1,46 +1,47 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Document } from "mongoose";
 
+// Hak ihlali verisi için arayüz
 export interface IViolation extends Document {
-  title: string; // Vaka başlığı
-  applicant: { name: string; contact: string }; // Başvuran bilgileri (ad ve iletişim)
-  category: string; // Kategori (ör: "Kadına Karşı Şiddet", "İfade Özgürlüğü")
-  source: { type: string; detail?: string }; // Kaynak bilgisi (ör: medya, STK)
-  status: string; // Durum (işlemde, tamamlandı)
+  title: string; // Başlık
+  applicant: { name: string; contact: string }; // Başvuran bilgileri
+  category: string; // Kategori
+  source: { type: string; detail?: string }; // Kaynak bilgisi
+  status: "in_progress" | "completed"; // Durum
   applicationDate: Date; // Başvuru tarihi
-  details: string; // Vaka detayları
-  summary: string; // Olay özeti
+  details: string; // Detaylar
+  summary?: string; // Özet
   legalRepresentative?: string; // Hukuki temsilci
-  reportingAgency?: string; // Olayı bildiren kurum
-  sourceDetail?: string; // Kaynağın detay bilgisi (ör: URL, medya adı)
+  reportingAgency?: string; // Bildiren kurum
+  sourceDetail?: string; // Kaynak detayları
   developments: Array<{ date: Date; description: string }>; // Gelişmeler
-  files: Array<{ name: string; type: string; date: Date }>; // Dosyalar
+  files: Array<{ name: string; type: string; date: Date; url: string }>; // Dosyalar
   messages: Array<{ sender: string; message: string; date: Date }>; // Mesajlar
-  result?: string; // Sonuç (opsiyonel)
+  result?: string; // Sonuç
 }
 
 const violationSchema = new Schema<IViolation>(
   {
-    title: { type: String, required: true }, // Vaka başlığı
+    title: { type: String, required: true },
     applicant: {
-      name: { type: String, required: true }, // Başvuranın adı
-      contact: { type: String, required: true }, // İletişim bilgisi
+      name: { type: String, required: true },
+      contact: { type: String, required: true },
     },
-    category: { type: String, required: true }, // Kategori
+    category: { type: String, required: true },
     source: {
-      type: { type: String, required: true }, // Kaynak türü (ör: medya, STK)
-      detail: { type: String }, // Kaynak detayları (opsiyonel)
+      type: { type: String, required: true },
+      detail: { type: String },
     },
     status: {
       type: String,
       required: true,
-      enum: ["işlemde", "tamamlandı"], // Durum seçenekleri
+      enum: ["in_progress", "completed"],
     },
-    applicationDate: { type: Date, required: true }, // Başvuru tarihi
-    details: { type: String, required: true }, // Detaylar
-    summary: { type: String }, // Özet
-    legalRepresentative: { type: String }, // Hukuki temsilci
-    reportingAgency: { type: String }, // Bildiren kurum
-    sourceDetail: { type: String }, // Kaynağın detay bilgisi
+    applicationDate: { type: Date, required: true },
+    details: { type: String, required: true },
+    summary: { type: String },
+    legalRepresentative: { type: String },
+    reportingAgency: { type: String },
+    sourceDetail: { type: String },
     developments: [
       {
         date: { type: Date, required: true },
@@ -52,8 +53,7 @@ const violationSchema = new Schema<IViolation>(
         name: { type: String, required: true },
         type: { type: String, required: true },
         date: { type: Date, required: true },
-        url: { type: String, required: true }, // Dosyanın S3 bağlantısı
-
+        url: { type: String, required: true },
       },
     ],
     messages: [
@@ -63,9 +63,9 @@ const violationSchema = new Schema<IViolation>(
         date: { type: Date, required: true },
       },
     ],
-    result: { type: String }, // Sonuç
+    result: { type: String },
   },
-  { timestamps: true } // createdAt ve updatedAt otomatik eklenir
+  { timestamps: true }
 );
 
 const Violation = model<IViolation>("Violation", violationSchema);
